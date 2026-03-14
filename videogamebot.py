@@ -1,6 +1,7 @@
 import os
 import json
 import logging
+import time  # NEW: Added to prevent hitting rate limits
 from google import genai
 from google.genai import types
 
@@ -16,15 +17,16 @@ def generate_squad():
         "You are designing a dark, edgy squad of 3 video game characters. "
         "Return ONLY a valid JSON object with exactly these 4 keys: "
         "'combined_lore': A 100-word gritty backstory describing the entire squad as a unit. "
-        "'image_prompt_1': A highly detailed visual description of the first character for an AI image generator. "
+        "'image_prompt_1': A highly detailed visual description of the first character. "
         "'image_prompt_2': A highly detailed visual description of the second character. "
         "'image_prompt_3': A highly detailed visual description of the third character. "
         "Do not include any markdown formatting or code blocks, just output raw JSON."
     )
 
     try:
+        # Using 2.5-flash which is generally very stable for text
         text_response = client.models.generate_content(
-            model='gemini-2.0-flash',
+            model='gemini-2.5-flash',
             contents=text_prompt,
         )
         
@@ -56,13 +58,12 @@ def generate_squad():
     for index, img_prompt in enumerate(prompts, start=1):
         logging.info(f"Generating image {index} of 3...")
         try:
-            # We use the multimodal model which accepts "Generate an image" instructions
+            # Using the specific 'preview' model found in your audit
             response = client.models.generate_content(
                 model='gemini-3.1-flash-image-preview',
                 contents=f"Generate a high-quality, gritty, 9:16 vertical video game character image. Description: {img_prompt}"
             )
             
-            # Find the image data in the response parts
             image_saved = False
             for part in response.candidates[0].content.parts:
                 if part.inline_data:
@@ -75,6 +76,11 @@ def generate_squad():
             
             if not image_saved:
                 logging.error(f"No image data returned for character {index}")
+
+            # Small 10-second breather to avoid the 429 "Too Many Requests" error
+            if index < 3:
+                logging.info("Taking a 10-second breather for the quota...")
+                time.sleep(10)
 
         except Exception as e:
             logging.error(f"Failed to generate image {index}: {e}")
