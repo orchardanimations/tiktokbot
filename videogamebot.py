@@ -65,7 +65,7 @@ def generate_squad():
         logging.info(f"Generating image {index} of 3...")
         try:
             image_response = client.models.generate_images(
-                model='imagen-3.0-generate-002',
+                model='imagen-3.0-generate-001',
                 prompt=img_prompt,
                 config=types.GenerateImagesConfig(
                     number_of_images=1,
