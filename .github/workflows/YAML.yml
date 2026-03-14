@@ -1,0 +1,15 @@
+- name: Commit and Push to GitHub
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          
+          # Tell GitHub to track all 4 new files
+          git add squad_lore.txt squad_member_1.jpg squad_member_2.jpg squad_member_3.jpg
+          
+          if ! git diff --staged --quiet; then
+            git commit -m "Generated new squad artwork and lore"
+            git pull --rebase origin main
+            git push
+          else
+            echo "No changes to commit."
+          fi
